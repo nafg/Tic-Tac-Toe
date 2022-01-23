@@ -11,3 +11,13 @@
 # Lock files
 /package-lock.json
 /yarn.lock
+
+# VS Code files
+/.vscode/
+
+# Scala files
+.bloop/
+/.bsp/
+/.metals/
+metals.sbt
+target/
