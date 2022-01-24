@@ -10,7 +10,7 @@ object Main extends App {
 
   var gameActive = true
   var currentPlayer = "X"
-  var gameState = Array("", "", "", "", "", "", "", "", "")
+  var gameState = List("", "", "", "", "", "", "", "", "")
 
   def winningMessage = s"Player ${currentPlayer} has won!"
   def drawMessage = s"Game ended in a draw!"
@@ -18,19 +18,19 @@ object Main extends App {
 
   statusDisplay.innerHTML = currentPlayerTurn
 
-  val winningConditions = Array(
-    Array(0, 1, 2),
-    Array(3, 4, 5),
-    Array(6, 7, 8),
-    Array(0, 3, 6),
-    Array(1, 4, 7),
-    Array(2, 5, 8),
-    Array(0, 4, 8),
-    Array(2, 4, 6)
+  val winningConditions = List(
+    List(0, 1, 2),
+    List(3, 4, 5),
+    List(6, 7, 8),
+    List(0, 3, 6),
+    List(1, 4, 7),
+    List(2, 5, 8),
+    List(0, 4, 8),
+    List(2, 4, 6)
   )
 
   def handleCellPlayed(clickedCell: Element, clickedCellIndex: Int) = {
-    gameState(clickedCellIndex) = currentPlayer
+    gameState = gameState.updated(clickedCellIndex, currentPlayer)
     clickedCell.innerHTML = currentPlayer
   }
 
@@ -39,9 +39,9 @@ object Main extends App {
     statusDisplay.innerHTML = currentPlayerTurn
   }
 
-  def isWin(winCondition: Array[Int]) =
+  def isWin(winCondition: List[Int]) =
     winCondition.map(x => gameState(x)) match {
-      case Array("X", "X", "X") | Array("O", "O", "O") => true
+      case List("X", "X", "X") | List("O", "O", "O") => true
       case _                                           => false
     }
 
@@ -73,7 +73,7 @@ object Main extends App {
   def handleRestartGame() = {
     gameActive = true;
     currentPlayer = "X";
-    gameState = Array("", "", "", "", "", "", "", "", "")
+    gameState = List("", "", "", "", "", "", "", "", "")
     statusDisplay.innerHTML = currentPlayerTurn
     document.querySelectorAll(".cell").foreach(cell => cell.innerHTML = "")
   }
