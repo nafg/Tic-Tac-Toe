@@ -12,11 +12,11 @@ object Main extends App {
   var currentPlayer = "X"
   var gameState = Array("", "", "", "", "", "", "", "", "")
 
-  val winningMessage = () => s"Player ${currentPlayer} has won!"
-  val drawMessage = () => s"Game ended in a draw!"
-  val currentPlayerTurn = () => s"It's ${currentPlayer}'s turn"
+  def winningMessage = s"Player ${currentPlayer} has won!"
+  def drawMessage = s"Game ended in a draw!"
+  def currentPlayerTurn = s"It's ${currentPlayer}'s turn"
 
-  statusDisplay.innerHTML = currentPlayerTurn()
+  statusDisplay.innerHTML = currentPlayerTurn
 
   val winningConditions = Array(
     Array(0, 1, 2),
@@ -36,66 +36,52 @@ object Main extends App {
 
   def handlePlayerChange() = {
     currentPlayer = if (currentPlayer == "X") "O" else "X"
-    statusDisplay.innerHTML = currentPlayerTurn()
+    statusDisplay.innerHTML = currentPlayerTurn
   }
+
+  def isWin(winCondition: Array[Int]) =
+    winCondition.map(x => gameState(x)) match {
+      case Array("X", "X", "X") | Array("O", "O", "O") => true
+      case _                                           => false
+    }
 
   def handleResultValidation(): Unit = {
-    var roundWon = false;
-    Breaks.breakable {
-      for (i <- 0 to 7) {
-        Continues.breakable {
-          val winCondition = winningConditions(i)
-          var a = gameState(winCondition(0))
-          var b = gameState(winCondition(1))
-          var c = gameState(winCondition(2))
-          if (a == "" || b == "" || c == "") {
-            Continues.break
-          }
-          if (a == b && b == c) {
-            roundWon = true;
-            Breaks.break
-          }
-        }
-      }
-    }
+    val roundWon = winningConditions.exists(isWin)
+    lazy val roundDraw = !gameState.contains("")
 
     if (roundWon) {
-      statusDisplay.innerHTML = winningMessage()
+      statusDisplay.innerHTML = winningMessage
       gameActive = false
-      return;
-    }
-
-    var roundDraw = !gameState.contains("")
-    if (roundDraw) {
-      statusDisplay.innerHTML = drawMessage()
+    } else if (roundDraw) {
+      statusDisplay.innerHTML = drawMessage
       gameActive = false
-      return
+    } else {
+      handlePlayerChange()
     }
-
-    handlePlayerChange()
   }
 
-
   def handleCellClick(clickedCellEvent: Event): Unit = {
-      val clickedCell = clickedCellEvent.target.asInstanceOf[Element]
-      val clickedCellIndex = clickedCell.getAttribute("data-cell-index").toInt
+    val clickedCell = clickedCellEvent.target.asInstanceOf[Element]
+    val clickedCellIndex = clickedCell.getAttribute("data-cell-index").toInt
 
-      if (gameState(clickedCellIndex) != "" || !gameActive) {
-          return;
-      }
-
-      handleCellPlayed(clickedCell, clickedCellIndex);
-      handleResultValidation();
+    if (gameState(clickedCellIndex).isEmpty && gameActive) {
+      handleCellPlayed(clickedCell, clickedCellIndex)
+      handleResultValidation()
+    }
   }
 
   def handleRestartGame() = {
-      gameActive = true;
-      currentPlayer = "X";
-      gameState = Array("", "", "", "", "", "", "", "", "")
-      statusDisplay.innerHTML = currentPlayerTurn();
-      document.querySelectorAll(".cell").foreach(cell => cell.innerHTML = "");
+    gameActive = true;
+    currentPlayer = "X";
+    gameState = Array("", "", "", "", "", "", "", "", "")
+    statusDisplay.innerHTML = currentPlayerTurn
+    document.querySelectorAll(".cell").foreach(cell => cell.innerHTML = "")
   }
 
-  document.querySelectorAll(".cell").foreach(cell => cell.addEventListener("click", handleCellClick _));
-  document.querySelector(".game--restart").addEventListener("click", _ => handleRestartGame())
+  document
+    .querySelectorAll(".cell")
+    .foreach(cell => cell.addEventListener("click", handleCellClick _))
+  document
+    .querySelector(".game--restart")
+    .addEventListener("click", _ => handleRestartGame())
 }
