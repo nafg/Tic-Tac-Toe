@@ -14,7 +14,8 @@ case class Game(
 object Main extends App {
   val statusDisplay = document.querySelector(".game--status")
 
-  var game = Game(true, "X", List("", "", "", "", "", "", "", "", ""))
+  val initialState = Game(true, "X", List("", "", "", "", "", "", "", "", ""))
+  var game = initialState
 
   def winningMessage = s"Player ${game.currentPlayer} has won!"
   def drawMessage = s"Game ended in a draw!"
@@ -47,7 +48,7 @@ object Main extends App {
   }
 
   def isWin(winCondition: List[Int]) =
-    winCondition.map(x => game.cells(x)) match {
+    winCondition.map(game.cells) match {
       case List("X", "X", "X") | List("O", "O", "O") => true
       case _                                         => false
     }
@@ -78,7 +79,7 @@ object Main extends App {
   }
 
   def handleRestartGame() = {
-    game = Game(true, "X", List("", "", "", "", "", "", "", "", ""))
+    game = initialState
     statusDisplay.innerHTML = currentPlayerTurn
     document.querySelectorAll(".cell").foreach(cell => cell.innerHTML = "")
   }
