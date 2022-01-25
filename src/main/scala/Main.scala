@@ -5,16 +5,20 @@ import org.scalajs.dom.Event
 
 object Continues extends Breaks
 
+case class Game(
+    active: Boolean,
+    currentPlayer: String,
+    cells: List[String]
+)
+
 object Main extends App {
   val statusDisplay = document.querySelector(".game--status")
 
-  var gameActive = true
-  var currentPlayer = "X"
-  var gameState = List("", "", "", "", "", "", "", "", "")
+  var game = Game(true, "X", List("", "", "", "", "", "", "", "", ""))
 
-  def winningMessage = s"Player ${currentPlayer} has won!"
+  def winningMessage = s"Player ${game.currentPlayer} has won!"
   def drawMessage = s"Game ended in a draw!"
-  def currentPlayerTurn = s"It's ${currentPlayer}'s turn"
+  def currentPlayerTurn = s"It's ${game.currentPlayer}'s turn"
 
   statusDisplay.innerHTML = currentPlayerTurn
 
@@ -30,31 +34,34 @@ object Main extends App {
   )
 
   def handleCellPlayed(clickedCell: Element, clickedCellIndex: Int) = {
-    gameState = gameState.updated(clickedCellIndex, currentPlayer)
-    clickedCell.innerHTML = currentPlayer
+    game = game.copy(cells =
+      game.cells.updated(clickedCellIndex, game.currentPlayer)
+    )
+    clickedCell.innerHTML = game.currentPlayer
   }
 
   def handlePlayerChange() = {
-    currentPlayer = if (currentPlayer == "X") "O" else "X"
+    game =
+      game.copy(currentPlayer = if (game.currentPlayer == "X") "O" else "X")
     statusDisplay.innerHTML = currentPlayerTurn
   }
 
   def isWin(winCondition: List[Int]) =
-    winCondition.map(x => gameState(x)) match {
+    winCondition.map(x => game.cells(x)) match {
       case List("X", "X", "X") | List("O", "O", "O") => true
-      case _                                           => false
+      case _                                         => false
     }
 
   def handleResultValidation(): Unit = {
     val roundWon = winningConditions.exists(isWin)
-    lazy val roundDraw = !gameState.contains("")
+    lazy val roundDraw = !game.cells.contains("")
 
     if (roundWon) {
       statusDisplay.innerHTML = winningMessage
-      gameActive = false
+      game = game.copy(active = false)
     } else if (roundDraw) {
       statusDisplay.innerHTML = drawMessage
-      gameActive = false
+      game = game.copy(active = false)
     } else {
       handlePlayerChange()
     }
@@ -64,16 +71,14 @@ object Main extends App {
     val clickedCell = clickedCellEvent.target.asInstanceOf[Element]
     val clickedCellIndex = clickedCell.getAttribute("data-cell-index").toInt
 
-    if (gameState(clickedCellIndex).isEmpty && gameActive) {
+    if (game.cells(clickedCellIndex).isEmpty && game.active) {
       handleCellPlayed(clickedCell, clickedCellIndex)
       handleResultValidation()
     }
   }
 
   def handleRestartGame() = {
-    gameActive = true;
-    currentPlayer = "X";
-    gameState = List("", "", "", "", "", "", "", "", "")
+    game = Game(true, "X", List("", "", "", "", "", "", "", "", ""))
     statusDisplay.innerHTML = currentPlayerTurn
     document.querySelectorAll(".cell").foreach(cell => cell.innerHTML = "")
   }
