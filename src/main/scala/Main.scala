@@ -3,6 +3,8 @@ import org.scalajs.dom.Element
 import scala.util.control.Breaks
 import org.scalajs.dom.Event
 
+import zio.*
+
 object Continues extends Breaks
 
 case class Game(
@@ -84,10 +86,28 @@ object Main extends App {
     document.querySelectorAll(".cell").foreach(cell => cell.innerHTML = "")
   }
 
-  document
-    .querySelectorAll(".cell")
-    .foreach(cell => cell.addEventListener("click", handleCellClick _))
-  document
-    .querySelector(".game--restart")
-    .addEventListener("click", _ => handleRestartGame())
+  extension (element: Element)
+    def addClickListener(f: Event => UIO[Unit]): UIO[Unit] =
+      UIO {
+        element.addEventListener(
+          "click",
+          event => Runtime.global.unsafeRunAsync_(f(event))
+        )
+      }
+
+  def run(args: List[String]): URIO[ZEnv, ExitCode] = URIO {
+    document
+      .querySelectorAll(".cell")
+      .foreach(cell =>
+        Runtime.global.unsafeRunAsync_ {
+          cell.addClickListener(event => UIO(handleCellClick(event)))
+        }
+      )
+
+    document
+      .querySelector(".game--restart")
+      .addEventListener("click", _ => handleRestartGame())
+
+    ExitCode.success
+  }
 }
