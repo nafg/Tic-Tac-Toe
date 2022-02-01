@@ -96,13 +96,9 @@ object Main extends App {
       }
 
   def run(args: List[String]): URIO[ZEnv, ExitCode] = URIO {
-    document
-      .querySelectorAll(".cell")
-      .foreach(cell =>
-        Runtime.global.unsafeRunAsync_ {
-          cell.addClickListener(event => UIO(handleCellClick(event)))
-        }
-      )
+    ZIO.foreach(document.querySelectorAll(".cell")) { cell =>
+      cell.addClickListener(event => UIO(handleCellClick(event)))
+    }
 
     document
       .querySelector(".game--restart")
