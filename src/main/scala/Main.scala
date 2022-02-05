@@ -95,15 +95,16 @@ object Main extends App {
         )
       }
 
-  def run(args: List[String]): URIO[ZEnv, ExitCode] = URIO {
-    ZIO.foreach(document.querySelectorAll(".cell")) { cell =>
-      cell.addClickListener(event => UIO(handleCellClick(event)))
-    }
-
-    document
-      .querySelector(".game--restart")
-      .addEventListener("click", _ => handleRestartGame())
-
-    ExitCode.success
-  }
+  def run(args: List[String]): URIO[ZEnv, ExitCode] = ZIO
+      .foreach(document.querySelectorAll(".cell")) { cell =>
+        cell.addClickListener(event => UIO(handleCellClick(event)))
+      }
+      .flatMap { _ =>
+        document
+          .querySelector(".game--restart")
+          .addClickListener(_ => UIO(handleRestartGame()))
+      }
+      .flatMap { _ =>
+        URIO { ExitCode.success }
+      }
 }
