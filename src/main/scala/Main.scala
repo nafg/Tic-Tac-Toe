@@ -95,7 +95,8 @@ object Main extends App {
         )
       }
 
-  def run(args: List[String]): URIO[ZEnv, ExitCode] = ZIO
+  def run(args: List[String]): URIO[ZEnv, ExitCode] =
+    ZIO
       .foreach(document.querySelectorAll(".cell")) { cell =>
         cell.addClickListener(event => UIO(handleCellClick(event)))
       }
@@ -104,7 +105,7 @@ object Main extends App {
           .querySelector(".game--restart")
           .addClickListener(_ => UIO(handleRestartGame()))
       }
-      .flatMap { _ =>
-        URIO { ExitCode.success }
+      .map { _ =>
+        ExitCode.success
       }
 }
