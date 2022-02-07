@@ -17,13 +17,10 @@ object Main extends App {
   val statusDisplay = document.querySelector(".game--status")
 
   val initialState = Game(true, "X", List("", "", "", "", "", "", "", "", ""))
-  var game = initialState
 
-  def winningMessage = s"Player ${game.currentPlayer} has won!"
+  def winningMessage(game: Game) = s"Player ${game.currentPlayer} has won!"
   def drawMessage = s"Game ended in a draw!"
-  def currentPlayerTurn = s"It's ${game.currentPlayer}'s turn"
-
-  statusDisplay.innerHTML = currentPlayerTurn
+  def currentPlayerTurn(game: Game) = s"It's ${game.currentPlayer}'s turn"
 
   val winningConditions = List(
     List(0, 1, 2),
@@ -36,54 +33,59 @@ object Main extends App {
     List(2, 4, 6)
   )
 
-  def handleCellPlayed(clickedCell: Element, clickedCellIndex: Int) = {
-    game = game.copy(cells =
+  def handleCellPlayed(
+      game: Game
+  )(clickedCell: Element, clickedCellIndex: Int) = {
+    val game2 = game.copy(cells =
       game.cells.updated(clickedCellIndex, game.currentPlayer)
     )
-    clickedCell.innerHTML = game.currentPlayer
+    clickedCell.innerHTML = currentPlayerTurn(game2)
+    game2
   }
 
-  def handlePlayerChange() = {
-    game =
+  def handlePlayerChange(game: Game) = {
+    val game2 =
       game.copy(currentPlayer = if (game.currentPlayer == "X") "O" else "X")
-    statusDisplay.innerHTML = currentPlayerTurn
+    statusDisplay.innerHTML = currentPlayerTurn(game2)
+    game2
   }
 
-  def isWin(winCondition: List[Int]) =
+  def isWin(game: Game)(winCondition: List[Int]) =
     winCondition.map(game.cells) match {
       case List("X", "X", "X") | List("O", "O", "O") => true
       case _                                         => false
     }
 
-  def handleResultValidation(): Unit = {
-    val roundWon = winningConditions.exists(isWin)
+  def handleResultValidation(game: Game): Game = {
+    val roundWon = winningConditions.exists(isWin(game))
     lazy val roundDraw = !game.cells.contains("")
 
     if (roundWon) {
-      statusDisplay.innerHTML = winningMessage
-      game = game.copy(active = false)
+      statusDisplay.innerHTML = winningMessage(game)
+      game.copy(active = false)
     } else if (roundDraw) {
       statusDisplay.innerHTML = drawMessage
-      game = game.copy(active = false)
+      game.copy(active = false)
     } else {
-      handlePlayerChange()
+      handlePlayerChange(game)
     }
   }
 
-  def handleCellClick(clickedCellEvent: Event): Unit = {
+  def handleCellClick(game: Game)(clickedCellEvent: Event): UIO[Game] = UIO {
     val clickedCell = clickedCellEvent.target.asInstanceOf[Element]
     val clickedCellIndex = clickedCell.getAttribute("data-cell-index").toInt
 
     if (game.cells(clickedCellIndex).isEmpty && game.active) {
-      handleCellPlayed(clickedCell, clickedCellIndex)
-      handleResultValidation()
-    }
+      val game2 = handleCellPlayed(game)(clickedCell, clickedCellIndex)
+      handleResultValidation(game2)
+    } else game
   }
 
-  def handleRestartGame() = {
-    game = initialState
-    statusDisplay.innerHTML = currentPlayerTurn
+  def handleRestartGame = UIO {
+    val game = initialState
+    statusDisplay.innerHTML = currentPlayerTurn(game)
     document.querySelectorAll(".cell").foreach(cell => cell.innerHTML = "")
+    game
   }
 
   extension (element: Element)
@@ -96,16 +98,20 @@ object Main extends App {
       }
 
   def run(args: List[String]): URIO[ZEnv, ExitCode] =
+    var _game = initialState
+
+    statusDisplay.innerHTML = currentPlayerTurn(_game)
+
+    def updateGame(game: Game) = UIO { _game = game }
+
     ZIO
-      .foreach(document.querySelectorAll(".cell")) { cell =>
-        cell.addClickListener(event => UIO(handleCellClick(event)))
-      }
+      .foreach(document.querySelectorAll(".cell"))(
+        _.addClickListener(handleCellClick(_game)(_).flatMap(updateGame))
+      )
       .flatMap { _ =>
         document
           .querySelector(".game--restart")
-          .addClickListener(_ => UIO(handleRestartGame()))
+          .addClickListener(_ => handleRestartGame.flatMap(updateGame))
       }
-      .map { _ =>
-        ExitCode.success
-      }
+      .as(ExitCode.success)
 }
